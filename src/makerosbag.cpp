@@ -48,6 +48,37 @@ std::vector<std::vector<cv::Vec4f>> getPointclouds(std::vector<cv::String> fpath
 }
 
 
+std::vector<float> splitLineByChar(std::string line, char delim)
+{
+    std::istringstream iss(line);
+    std::string val;
+    std::vector<float> vals;
+    while(std::getline(iss, val, delim))
+    {
+        vals.push_back(atof(val.c_str()));
+    }
+    return vals;
+}
+
+
+std::map<std::string, std::vector<float>> getCalib(cv::String fpath)
+{
+    std::map<std::string, std::vector<float>> calib;
+    std::ifstream ifs(fpath.c_str());
+    std::string key, line;
+
+    while(ifs.good())
+    {
+        std::getline(ifs, key, ':');
+        ifs.ignore(1, ' ');
+        std::getline(ifs, line, '\n');
+        auto val = splitLineByChar(line, ' ');
+        calib.insert(std::make_pair(key, val));
+    }
+    return calib;
+}
+
+
 int main(int argc, const char* argv[])
 {
     std::string basedir = argv[1];
@@ -59,5 +90,8 @@ int main(int argc, const char* argv[])
 
     auto pointcloudFpaths = getFilepaths(patternPoints);
     auto points = getPointclouds(pointcloudFpaths);
+
+    std::string calibFname = basedir + "calib_cam_to_cam.txt";
+    auto calib = getCalib(calibFname);
     return 0;
 }
