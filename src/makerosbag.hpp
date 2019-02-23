@@ -1,14 +1,8 @@
-#ifndef MAIN_H
-# define MAIN_H
+#ifndef MAKEROSBAG_HPP
+#define MAKEROSBAG_HPP
 
 #include <vector>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <fstream>
-#include <stdio.h>
 #include <opencv2/opencv.hpp>
-
 
 std::vector<cv::String> getFilepaths(std::string pattern);
 std::vector<cv::Mat> getImages(std::vector<cv::String> fpaths);

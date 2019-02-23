@@ -1,9 +1,5 @@
+#include "makerosbag.hpp"
 #include <vector>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <fstream>
-#include <stdio.h>
 #include <opencv2/opencv.hpp>
 
 
