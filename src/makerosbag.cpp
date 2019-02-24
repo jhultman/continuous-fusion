@@ -2,14 +2,21 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
-std::vector<cv::String> globFilepaths(std::string pattern)
+Calibration::Calibration(std::string basedir)
+{
+    _calibVeloToCam = Calibration::getCalib(basedir + "calib_velo_to_cam.txt");
+    _calibCamToCam = Calibration::getCalib(basedir + "calib_cam_to_cam.txt");
+    auto PRT = getVeloToImagePRT();
+}
+
+std::vector<cv::String> Calibration::globFilesHelper(std::string pattern)
 {
     std::vector<cv::String> fpaths; 
     cv::glob(pattern, fpaths, false);
     return fpaths;
 }
 
-std::vector<cv::Mat> getImages(std::vector<cv::String> fpaths)
+std::vector<cv::Mat> Calibration::getImages(std::vector<cv::String> fpaths)
 {
     std::vector<cv::Mat> images;
     for(auto const& fpath : fpaths) {
@@ -19,7 +26,7 @@ std::vector<cv::Mat> getImages(std::vector<cv::String> fpaths)
     return images;
 }
 
-cv::Mat getPointcloud(cv::String fpath)
+cv::Mat Calibration::getPointcloud(cv::String fpath)
 {
     cv::Vec4f point;
     std::vector<cv::Vec4f> points;
@@ -33,7 +40,7 @@ cv::Mat getPointcloud(cv::String fpath)
     return mat;
 }
 
-std::vector<cv::Mat> getPointclouds(std::vector<cv::String> fpaths)
+std::vector<cv::Mat> Calibration::getPointclouds(std::vector<cv::String> fpaths)
 {
     std::vector<cv::Mat> scans;
     for(auto const& fpath : fpaths) {
@@ -43,7 +50,7 @@ std::vector<cv::Mat> getPointclouds(std::vector<cv::String> fpaths)
     return scans;
 }
 
-std::vector<float> splitLineByChar(std::string line, char delim)
+std::vector<float> Calibration::splitLineByChar(std::string line, char delim)
 {
     std::string val;
     std::vector<float> vals;
@@ -55,7 +62,7 @@ std::vector<float> splitLineByChar(std::string line, char delim)
     return vals;
 }
 
-std::map<std::string, std::vector<float>> getCalib(cv::String fpath)
+std::map<std::string, std::vector<float>> Calibration::getCalib(cv::String fpath)
 {
     std::map<std::string, std::vector<float>> calib;
     std::ifstream ifs(fpath.c_str());
@@ -71,11 +78,11 @@ std::map<std::string, std::vector<float>> getCalib(cv::String fpath)
     return calib;
 }
 
-cv::Mat getVeloToCam0Unrect(std::map<std::string, std::vector<float>> calib)
+cv::Mat Calibration::getVeloToCam0Unrect()
 {
     // 4x4 xform from velodyne coords to unrectified cam0 coords
-    cv::Mat R3x3 = cv::Mat(calib.at("R")).reshape(1, 3);
-    cv::Mat T3x1 = cv::Mat(calib.at("T")).reshape(1, 3);
+    cv::Mat R3x3 = cv::Mat(_calibVeloToCam.at("R")).reshape(1, 3);
+    cv::Mat T3x1 = cv::Mat(_calibVeloToCam.at("T")).reshape(1, 3);
     cv::Mat row1x4 = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
     cv::Mat mat3x4(3, 4, CV_32F);
     cv::Mat mat4x4(4, 4, CV_32F);
@@ -84,95 +91,90 @@ cv::Mat getVeloToCam0Unrect(std::map<std::string, std::vector<float>> calib)
     return mat4x4;
 }
 
-cv::Mat getCam0UnrectToCam2Rect(std::map<std::string, std::vector<float>> calib)
+cv::Mat Calibration::getCam0UnrectToCam2Rect()
 {
     // 4x4 xform from unrectified cam0 coords to rectified cam2 coords
-    cv::Mat R3x3 = cv::Mat(calib.at("R_rect_00")).reshape(1, 3);
+    cv::Mat R3x3 = cv::Mat(_calibCamToCam.at("R_rect_00")).reshape(1, 3);
     cv::Mat R3x4(3, 4, CV_32F);
     cv::Mat R4x4(4, 4, CV_32F);
     cv::Mat col3x1 = (cv::Mat_<float>(3, 1) << 0, 0, 0);
     cv::Mat row1x4 = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
     cv::hconcat(R3x3, col3x1, R3x4);
     cv::vconcat(R3x4, row1x4, R4x4);
-    cv::Mat P3x4 = cv::Mat(calib.at("P_rect_02")).reshape(1, 3);
+    cv::Mat P3x4 = cv::Mat(_calibCamToCam.at("P_rect_02")).reshape(1, 3);
     cv::Mat T2 = cv::Mat::eye(4, 4, CV_32F);
     T2.at<float>(0, 3) = P3x4.at<float>(0, 3) / P3x4.at<float>(0, 0);
     cv::Mat mat = T2.mul(R4x4);
     return mat;
 }
 
-cv::Mat allAtOnce(
-        std::map<std::string, std::vector<float>> calibVeloToCam,
-        std::map<std::string, std::vector<float>> calibCamToCam)
+cv::Mat Calibration::allAtOnce()
 {
     // 4x4 xform from unrectified cam0 coords to rectified cam2 coords
-    
-    auto RT = getVeloToCam0Unrect(calibVeloToCam);
+    auto RT = getVeloToCam0Unrect();
     std::cout << RT << std::endl << std::endl;
 
-    cv::Mat R3x3 = cv::Mat(calibCamToCam.at("R_rect_00")).reshape(1, 3);
+    cv::Mat R3x3 = cv::Mat(_calibCamToCam.at("R_rect_00")).reshape(1, 3);
     cv::Mat R3x4(3, 4, CV_32F);
     cv::Mat R4x4(4, 4, CV_32F);
     cv::Mat col3x1 = (cv::Mat_<float>(3, 1) << 0, 0, 0);
     cv::Mat row1x4 = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
     cv::hconcat(R3x3, col3x1, R3x4);
     cv::vconcat(R3x4, row1x4, R4x4);
-    cv::Mat P3x4 = cv::Mat(calibCamToCam.at("P_rect_02")).reshape(1, 3);
+    cv::Mat P3x4 = cv::Mat(_calibCamToCam.at("P_rect_02")).reshape(1, 3);
     cv::Mat T2 = cv::Mat::eye(4, 4, CV_32F);
     T2.at<float>(0, 3) = P3x4.at<float>(0, 3) / P3x4.at<float>(0, 0);
     cv::Mat mat = T2.mul(R4x4).mul(RT);
     return mat;
 }
 
-cv::Mat getCam0RectToImage2(std::map<std::string, std::vector<float>> calib)
+cv::Mat Calibration::getCam0RectToImage2()
 {
     // Projection from rectified cam0 coords to image plane of cam2
-    cv::Mat mat3x4 = cv::Mat(calib.at("P_rect_02")).reshape(1, 3);
+    cv::Mat mat3x4 = cv::Mat(_calibCamToCam.at("P_rect_02")).reshape(1, 3);
     cv::Mat row1x4 = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
     cv::Mat mat4x4(4, 4, CV_32F);
     cv::vconcat(mat3x4, row1x4, mat4x4);
     return mat4x4;
 }
 
-void loadImagesAndPoints(std::string basedir)
-{
-    std::string patternImages = basedir + 
-        "2011_09_26_drive_0005_sync/image_02/data/*.png";
-    std::string patternPoints = basedir + 
-        "2011_09_26_drive_0005_sync/velodyne_points/data/*.bin";
-    auto imageFpaths = globFilepaths(patternImages);
-    auto pointcloudFpaths = globFilepaths(patternPoints);
-    auto images = getImages(imageFpaths);
-    auto points = getPointclouds(pointcloudFpaths);
-    return;
-}
-
-void coutMatSize(cv::Mat mat)
-{
-    std::cout << "[" << mat.rows << " x " << mat.cols << "]" << std::endl;
-}
-
-cv::Mat getVeloToImagePRT(std::map<std::string, std::vector<float>> calibCamToCam, std::map<std::string, std::vector<float>> calibVeloToCam)
+cv::Mat Calibration::getVeloToImagePRT()
 {
     // x_image = P * R * T * x_velo as given in (7) in Geiger, et al.
-    cv::Mat cam0RectToImage2 = getCam0RectToImage2(calibCamToCam);
-    cv::Mat veloToCam0Unrect = getVeloToCam0Unrect(calibVeloToCam);
-    cv::Mat cam0UnrectToCam2Rect = getCam0UnrectToCam2Rect(calibCamToCam);
+    cv::Mat cam0RectToImage2 = getCam0RectToImage2();
+    cv::Mat veloToCam0Unrect = getVeloToCam0Unrect();
+    cv::Mat cam0UnrectToCam2Rect = getCam0UnrectToCam2Rect();
 
     cv::Mat P = cam0RectToImage2;
     cv::Mat R = veloToCam0Unrect.inv(); //cam0unrecttovelo
-    cv::Mat T = (allAtOnce(calibVeloToCam, calibCamToCam)).inv();
+    cv::Mat T = allAtOnce().inv();
     
     cv::Mat PRT = P.mul(R).mul(T);
     std::cout << T << std::endl << std::endl;
     return PRT;
 }
 
+void Calibration::loadImagesAndPoints(std::string basedir)
+{
+    std::string patternImages = basedir + 
+        "2011_09_26_drive_0005_sync/image_02/data/*.png";
+    std::string patternPoints = basedir + 
+        "2011_09_26_drive_0005_sync/velodyne_points/data/*.bin";
+    auto imageFpaths = globFilesHelper(patternImages);
+    auto pointcloudFpaths = globFilesHelper(patternPoints);
+    auto images = getImages(imageFpaths);
+    auto points = getPointclouds(pointcloudFpaths);
+    return;
+}
+
+void Calibration::coutMatSize(cv::Mat mat)
+{
+    std::cout << "[" << mat.rows << " x " << mat.cols << "]" << std::endl;
+}
+
 int main(int argc, const char* argv[])
 {
     std::string basedir = argv[1];
-    auto calibCamToCam = getCalib(basedir + "calib_cam_to_cam.txt");
-    auto calibVeloToCam = getCalib(basedir + "calib_velo_to_cam.txt");
-    auto PRT = getVeloToImagePRT(calibCamToCam, calibVeloToCam);
+    Calibration calib = Calibration(basedir);
     return 0;
 }
