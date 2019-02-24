@@ -8,9 +8,7 @@ compile_commands.json
 include/
 
 # Object files
-**/*.o
-**/*.so
-**/*.out
-src/*
-!src/*.cpp
-!src/*.hpp
+src/*.sh
+src/*.o
+src/main
+src/tests
