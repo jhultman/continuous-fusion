@@ -36,6 +36,12 @@ class Calibration
         cv::Mat getCam0RectToImage2();
         cv::Mat getCam0UnrectToCam2Rect();
 
+        // Static matrix methods
+        static cv::Mat getVeloToCam0Unrect(std::vector<float> R, std::vector<float> T);
+        static cv::Mat getCam0UnrectToCam2Rect(std::vector<float> R_rect_00, std::vector<float> P_rect_02);
+        static cv::Mat allAtOnce(cv::Mat RT, std::vector<float> R_rect_00, std::vector<float> P_rect_02);
+        static cv::Mat getCam0RectToImage2(std::vector<float> P_rect_02);
+
     public:
         Calibration(std::string basedir);
         static std::vector<float> splitLineByChar(std::string line, char delim);
