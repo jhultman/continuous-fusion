@@ -11,7 +11,7 @@ catchmain:
     $(CC) $(CFLAGS) catchmain.cpp -c
 
 catchtests:
-    $(CC) $(CFLAGS) -o tests catchmain.o iotests.cpp calibration.cpp $(LIBS)
+    $(CC) $(CFLAGS) -o tests catchmain.o iotests.cpp calibration.cpp kittireader.cpp $(LIBS)
 
 clean:
    -rm -f main *.o

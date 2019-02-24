@@ -70,11 +70,10 @@ cv::Mat Calibration::getCam0UnrectToCam2Rect(std::vector<float> R_rect_00, std::
     cv::Mat R3x3 = cv::Mat(R_rect_00).reshape(1, 3);
     cv::Mat R3x4 = Calibration::hconcatCol(R3x3, cv::Mat::zeros(3, 1, CV_32F));
     cv::Mat R4x4 = Calibration::vconcatRow(R3x4);
-
     cv::Mat P3x4 = cv::Mat(P_rect_02).reshape(1, 3);
     cv::Mat T2 = cv::Mat::eye(4, 4, CV_32F);
     T2.at<float>(0, 3) = P3x4.at<float>(0, 3) / P3x4.at<float>(0, 0);
-    cv::Mat mat = T2.mul(R4x4);
+    cv::Mat mat = T2 * R4x4;
     return mat;
 }
 
@@ -93,7 +92,7 @@ cv::Mat Calibration::allAtOnce(cv::Mat RT, std::vector<float> R_rect_00, std::ve
     cv::Mat P3x4 = cv::Mat(P_rect_02).reshape(1, 3);
     cv::Mat T2 = cv::Mat::eye(4, 4, CV_32F);
     T2.at<float>(0, 3) = P3x4.at<float>(0, 3) / P3x4.at<float>(0, 0);
-    cv::Mat mat = T2.mul(R4x4).mul(RT);
+    cv::Mat mat = T2 * R4x4 * RT;
     return mat;
 }
 
@@ -130,7 +129,7 @@ cv::Mat Calibration::getVeloToImagePRT()
     cv::Mat R = veloToCam0Unrect.inv();
     cv::Mat T = allAtOnce().inv();
     
-    cv::Mat PRT = P.mul(R).mul(T);
+    cv::Mat PRT = P * R * T;
     std::cout << T << std::endl << std::endl;
     return PRT;
 }
