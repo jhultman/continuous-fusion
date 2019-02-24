@@ -1,8 +1,8 @@
-#include "makerosbag.hpp"
+#include "kittireader.hpp"
 
 int main(int argc, const char* argv[])
 {
     std::string basedir = argv[1];
-    Calibration calib = Calibration(basedir);
+    KittiReader kitti = KittiReader(basedir);
     return 0;
 }
