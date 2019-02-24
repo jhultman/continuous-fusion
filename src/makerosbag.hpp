@@ -19,9 +19,15 @@ class Calibration
         static std::map<std::string, std::vector<float>> getCalib(cv::String fpath);
 
         // Utils
-        static std::vector<cv::String> globFilesHelper(std::string pattern);
-        static void loadImagesAndPoints(std::string basedir);
         static void coutMatSize(cv::Mat mat);
+        static void loadImagesAndPoints(std::string basedir);
+        static std::vector<cv::String> globFilesHelper(std::string pattern);
+
+        // Matrix utils
+        static cv::Mat hconcatCol(cv::Mat matIn);
+        static cv::Mat vconcatRow(cv::Mat matIn);
+        static cv::Mat hconcatCol(cv::Mat matIn, cv::Mat col);
+        static cv::Mat vconcatRow(cv::Mat matIn, cv::Mat row);
 
         // Matrix methods
         cv::Mat allAtOnce();

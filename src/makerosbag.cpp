@@ -62,6 +62,44 @@ std::vector<float> Calibration::splitLineByChar(std::string line, char delim)
     return vals;
 }
 
+cv::Mat Calibration::vconcatRow(cv::Mat matIn, cv::Mat row)
+{
+    assert (matIn.cols == row.cols);
+    size_t rows = matIn.rows + 1;
+    size_t cols = matIn.cols;
+    cv::Mat matOut(rows, cols, CV_32F);
+    cv::vconcat(matIn, row, matOut);
+    return matOut;
+}
+
+cv::Mat Calibration::hconcatCol(cv::Mat matIn, cv::Mat col)
+{
+    assert (matIn.rows == col.rows);
+    size_t rows = matIn.rows;
+    size_t cols = matIn.cols + 1;
+    cv::Mat matOut(rows, cols, CV_32F);
+    cv::hconcat(matIn, col, matOut);
+    return matOut;
+}
+
+cv::Mat Calibration::vconcatRow(cv::Mat matIn)
+{
+    assert (matIn.rows == 3);
+    assert (matIn.cols == 4);
+    cv::Mat row = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
+    cv::Mat matOut = Calibration::vconcatRow(matIn, row);
+    return matOut;
+}
+
+cv::Mat Calibration::hconcatCol(cv::Mat matIn)
+{
+    assert (matIn.rows == 4);
+    assert (matIn.cols == 3);
+    cv::Mat col = (cv::Mat_<float>(4, 1) << 0, 0, 0, 1);
+    cv::Mat matOut = Calibration::hconcatCol(matIn, col);
+    return matOut;
+}
+
 std::map<std::string, std::vector<float>> Calibration::getCalib(cv::String fpath)
 {
     std::map<std::string, std::vector<float>> calib;
@@ -83,11 +121,8 @@ cv::Mat Calibration::getVeloToCam0Unrect()
     // 4x4 xform from velodyne coords to unrectified cam0 coords
     cv::Mat R3x3 = cv::Mat(_calibVeloToCam.at("R")).reshape(1, 3);
     cv::Mat T3x1 = cv::Mat(_calibVeloToCam.at("T")).reshape(1, 3);
-    cv::Mat row1x4 = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
-    cv::Mat mat3x4(3, 4, CV_32F);
-    cv::Mat mat4x4(4, 4, CV_32F);
-    cv::hconcat(R3x3, T3x1, mat3x4);
-    cv::vconcat(mat3x4, row1x4, mat4x4);
+    cv::Mat mat3x4 = Calibration::hconcatCol(R3x3, T3x1);
+    cv::Mat mat4x4 = Calibration::vconcatRow(mat3x4);
     return mat4x4;
 }
 
@@ -95,12 +130,9 @@ cv::Mat Calibration::getCam0UnrectToCam2Rect()
 {
     // 4x4 xform from unrectified cam0 coords to rectified cam2 coords
     cv::Mat R3x3 = cv::Mat(_calibCamToCam.at("R_rect_00")).reshape(1, 3);
-    cv::Mat R3x4(3, 4, CV_32F);
-    cv::Mat R4x4(4, 4, CV_32F);
-    cv::Mat col3x1 = (cv::Mat_<float>(3, 1) << 0, 0, 0);
-    cv::Mat row1x4 = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
-    cv::hconcat(R3x3, col3x1, R3x4);
-    cv::vconcat(R3x4, row1x4, R4x4);
+    cv::Mat R3x4 = Calibration::hconcatCol(R3x3, cv::Mat::zeros(3, 1, CV_32F));
+    cv::Mat R4x4 = Calibration::vconcatRow(R3x4);
+
     cv::Mat P3x4 = cv::Mat(_calibCamToCam.at("P_rect_02")).reshape(1, 3);
     cv::Mat T2 = cv::Mat::eye(4, 4, CV_32F);
     T2.at<float>(0, 3) = P3x4.at<float>(0, 3) / P3x4.at<float>(0, 0);
@@ -115,12 +147,8 @@ cv::Mat Calibration::allAtOnce()
     std::cout << RT << std::endl << std::endl;
 
     cv::Mat R3x3 = cv::Mat(_calibCamToCam.at("R_rect_00")).reshape(1, 3);
-    cv::Mat R3x4(3, 4, CV_32F);
-    cv::Mat R4x4(4, 4, CV_32F);
-    cv::Mat col3x1 = (cv::Mat_<float>(3, 1) << 0, 0, 0);
-    cv::Mat row1x4 = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
-    cv::hconcat(R3x3, col3x1, R3x4);
-    cv::vconcat(R3x4, row1x4, R4x4);
+    cv::Mat R3x4 = Calibration::hconcatCol(R3x3, cv::Mat::zeros(3, 1, CV_32F));
+    cv::Mat R4x4 = Calibration::vconcatRow(R3x4);
     cv::Mat P3x4 = cv::Mat(_calibCamToCam.at("P_rect_02")).reshape(1, 3);
     cv::Mat T2 = cv::Mat::eye(4, 4, CV_32F);
     T2.at<float>(0, 3) = P3x4.at<float>(0, 3) / P3x4.at<float>(0, 0);
@@ -132,9 +160,7 @@ cv::Mat Calibration::getCam0RectToImage2()
 {
     // Projection from rectified cam0 coords to image plane of cam2
     cv::Mat mat3x4 = cv::Mat(_calibCamToCam.at("P_rect_02")).reshape(1, 3);
-    cv::Mat row1x4 = (cv::Mat_<float>(1, 4) << 0, 0, 0, 1);
-    cv::Mat mat4x4(4, 4, CV_32F);
-    cv::vconcat(mat3x4, row1x4, mat4x4);
+    cv::Mat mat4x4 = Calibration::vconcatRow(mat3x4);
     return mat4x4;
 }
 
