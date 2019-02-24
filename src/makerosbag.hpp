@@ -12,15 +12,19 @@ std::vector<cv::Mat> getImages(std::vector<cv::String> fpaths);
 
 // Utils
 std::vector<float> splitLineByChar(std::string line, char delim);
-cv::Mat padThreeByFour(cv::Mat mat);
 std::map<std::string, std::vector<float>> getCalib(cv::String fpath);
+void loadImagesAndPoints(std::string basedir);
 void coutMatSize(cv::Mat mat);
 
 // calibration matrices
-cv::Mat getT2(std::map<std::string, std::vector<float>> calib);
-cv::Mat getP_rect_00(std::map<std::string, std::vector<float>> calib);
-cv::Mat getT_cam0_velo_unrect(std::map<std::string, std::vector<float>> calib);
-cv::Mat getT2(std::map<std::string, std::vector<float>> calib);
-cv::Mat getR_rect_00(std::map<std::string, std::vector<float>> calib);
+cv::Mat getVeloToCam0Unrect(std::map<std::string, std::vector<float>> calib);
+cv::Mat getCam0UnrectToCam2Rect(std::map<std::string, std::vector<float>> calib);
+cv::Mat allAtOnce(
+        std::map<std::string, std::vector<float>> calibVeloToCam,
+        std::map<std::string, std::vector<float>> calibCamToCam);
+cv::Mat getCam0RectToImage2(std::map<std::string, std::vector<float>> calib);
+cv::Mat getVeloToImagePRT(
+        std::map<std::string, std::vector<float>> calibCamToCam,
+        std::map<std::string, std::vector<float>> calibVeloToCam);
 
 #endif
