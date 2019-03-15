@@ -5,10 +5,10 @@
 
 KittiReader::KittiReader(std::string basedir)
 {
-    auto calibVeloToCam = getCalib(basedir + "calib_velo_to_cam.txt");
-    auto calibCamToCam = getCalib(basedir + "calib_cam_to_cam.txt");
-    Calibration calib = Calibration(calibVeloToCam, calibCamToCam);
-    auto PRT = calib.getVeloToImagePRT();
+    auto veloToCam = getCalib(basedir + "calib_velo_to_cam.txt");
+    auto camToCam = getCalib(basedir + "calib_cam_to_cam.txt");
+    Calibration calib = Calibration(veloToCam, camToCam);
+    auto PRT = calib.getVeloToImage2();
 }
 
 std::vector<cv::String> KittiReader::globFilesHelper(std::string pattern)

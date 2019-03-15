@@ -7,8 +7,8 @@
 class Calibration
 {
     private:
-        std::map<std::string, std::vector<float>> _calibVeloToCam;
-        std::map<std::string, std::vector<float>> _calibCamToCam;
+        std::map<std::string, std::vector<float>> _veloToCam;
+        std::map<std::string, std::vector<float>> _camToCam;
 
         // Matrix utils
         static void coutMatSize(cv::Mat mat);
@@ -18,23 +18,19 @@ class Calibration
         static cv::Mat vconcatRow(cv::Mat matIn, cv::Mat row);
 
         // Matrix methods
-        cv::Mat allAtOnce();
         cv::Mat getVeloToCam0Unrect();
+        cv::Mat getCam0UnrectToCam0Rect();
         cv::Mat getCam0RectToImage2();
-        cv::Mat getCam0UnrectToCam2Rect();
 
     public:
         Calibration(
-            std::map<std::string, std::vector<float>> calibVeloToCam,
-            std::map<std::string, std::vector<float>> calibCamToCam);
-
-        cv::Mat getVeloToImagePRT();
-
-        // Static matrix methods
+            std::map<std::string, std::vector<float>> veloToCam,
+            std::map<std::string, std::vector<float>> camToCam);
+        
         static cv::Mat getVeloToCam0Unrect(std::vector<float> R, std::vector<float> T);
-        static cv::Mat allAtOnce(cv::Mat RT, std::vector<float> R_rect_00, std::vector<float> P_rect_02);
+        static cv::Mat getCam0UnrectToCam0Rect(std::vector<float> R_rect_00);
         static cv::Mat getCam0RectToImage2(std::vector<float> P_rect_02);
-        static cv::Mat getCam0UnrectToCam2Rect(std::vector<float> R_rect_00, std::vector<float> P_rect_02);
+        cv::Mat getVeloToImage2();
 };
 
 #endif
