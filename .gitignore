@@ -1,14 +1,13 @@
-# ROS
-package.xml
-CMakeLists.txt
-
 # Compilation database
 compile_commands.json
 
-include/
+include/*
 
 # Object files
 src/*.sh
 src/*.o
 src/main
 src/tests
+
+# vscode
+.vscode/*

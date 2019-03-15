@@ -5,9 +5,7 @@
 
 KittiReader::KittiReader(std::string basedir)
 {
-    auto veloToCam = getCalib(basedir + "calib_velo_to_cam.txt");
-    auto camToCam = getCalib(basedir + "calib_cam_to_cam.txt");
-    Calibration calib = Calibration(veloToCam, camToCam);
+    auto calib = makeCalib(basedir);
     auto PRT = calib.getVeloToImage2();
 }
 
@@ -90,5 +88,13 @@ std::map<std::string, std::vector<float>> KittiReader::getCalib(cv::String fpath
         auto val = splitLineByChar(line, ' ');
         calib.insert(std::make_pair(key, val));
     }
+    return calib;
+}
+
+Calibration KittiReader::makeCalib(cv::String basedir)
+{
+    auto veloToCam = getCalib(basedir + "calib_velo_to_cam.txt");
+    auto camToCam = getCalib(basedir + "calib_cam_to_cam.txt");
+    auto calib = Calibration(veloToCam, camToCam);
     return calib;
 }
