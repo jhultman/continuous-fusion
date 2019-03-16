@@ -2,6 +2,7 @@
 #include "calibration.hpp"
 #include <vector>
 #include <opencv2/opencv.hpp>
+#include "pcl_ros/point_cloud.h"
 
 KittiReader::KittiReader(std::string basedir)
 {
@@ -26,23 +27,39 @@ std::vector<cv::Mat> KittiReader::getImages(std::vector<cv::String> fpaths)
     return images;
 }
 
-cv::Mat KittiReader::getPointcloud(cv::String fpath)
+pcl::PointCloud<pcl::PointXYZI> KittiReader::getPointcloud(cv::String fpath)
 {
     cv::Vec4f point;
-    std::vector<cv::Vec4f> points;
+    std::vector<cv::Vec4f> pointsBuffer;
     std::ifstream ifs(fpath.c_str(), std::ios::in | std::ios::binary);
     while(ifs.good())
     {
         ifs.read((char *) &point, 4*sizeof(float));
-        points.push_back(point);
+        pointsBuffer.push_back(point);
     }
-    cv::Mat mat(points);
-    return mat;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    cloud->width = pointsBuffer.size();
+    cloud->height = 1;
+    cloud->points.resize(cloud->width * cloud->height);
+    cloud->is_dense = false;
+
+    pcl::PointXYZI pointTo;
+    for (size_t i = 0; i < cloud->width; ++i)
+    {
+        point = pointsBuffer[i];
+        pointTo = cloud->points[i];
+        pointTo.x = point[0];
+        pointTo.y = point[1];
+        pointTo.z = point[2];
+        pointTo.intensity = point[3];
+    }
+
+    return *cloud;
 }
 
-std::vector<cv::Mat> KittiReader::getPointclouds(std::vector<cv::String> fpaths)
+std::vector<pcl::PointCloud<pcl::PointXYZI>> KittiReader::getPointclouds(std::vector<cv::String> fpaths)
 {
-    std::vector<cv::Mat> scans;
+    std::vector<pcl::PointCloud<pcl::PointXYZI>> scans;
     for(auto const& fpath : fpaths) {
         auto scan = getPointcloud(fpath);
         scans.push_back(scan);

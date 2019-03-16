@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   cv_bridge
   image_transport
+  pcl_conversions
+  pcl_ros
 )
 
 generate_messages(
@@ -28,10 +30,15 @@ find_package(
   OpenCV
 )
 
+find_package(
+  PCL
+)
+
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 add_executable(kitticalib 
@@ -64,4 +71,21 @@ add_dependencies(kitticamera
 target_link_libraries(kitticamera
   ${catkin_LIBRARIES} 
   ${OpenCV_LIBRARIES}
+)
+
+add_executable(kittivelo
+    src/velopublisher.cpp
+    src/kittireader.cpp
+    src/calibration.cpp
+)
+
+add_dependencies(kittivelo
+  ${catkin_EXPORTED_TARGETS} 
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+)
+
+target_link_libraries(kittivelo
+  ${catkin_LIBRARIES} 
+  ${OpenCV_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
