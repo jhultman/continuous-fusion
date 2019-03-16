@@ -1,13 +1,8 @@
 # Compilation database
 compile_commands.json
 
-include/*
-
 # Object files
-src/*.sh
-src/*.o
-src/main
-src/tests
+build/*
 
 # vscode
 .vscode/*

@@ -29,7 +29,7 @@ void callback(const sensor_msgs::ImageConstPtr& msg)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "calibrator");
+    ros::init(argc, argv, "kitticalib");
     ros::NodeHandle nh;
     image_transport::ImageTransport xport(nh);
 

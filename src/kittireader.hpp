@@ -20,7 +20,6 @@ class KittiReader
         static Calibration makeCalib(cv::String basedir);
 
         // Reading data
-        static std::vector<cv::String> globFilepaths(std::string pattern);
         static void loadImagesAndPoints(std::string basedir);
         static std::vector<cv::String> globFilesHelper(std::string pattern);
 
