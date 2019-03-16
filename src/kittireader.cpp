@@ -20,51 +20,48 @@ std::vector<cv::String> KittiReader::globFilesHelper(std::string pattern)
 std::vector<cv::Mat> KittiReader::getImages(std::vector<cv::String> fpaths)
 {
     std::vector<cv::Mat> images;
-    for(auto const& fpath : fpaths) {
+    for(auto const& fpath : fpaths) 
+    {
         auto image = cv::imread(fpath, CV_LOAD_IMAGE_COLOR);
         images.push_back(image);
     }
     return images;
 }
 
+pcl::PointXYZI PointXYZI_(cv::Vec4f fields)
+{ 
+    pcl::PointXYZI pt;
+    pt.x = fields[0]; 
+    pt.y = fields[1]; 
+    pt.z = fields[2]; 
+    pt.intensity = fields[3]; 
+    return pt;
+}
+
 pcl::PointCloud<pcl::PointXYZI> KittiReader::getPointcloud(cv::String fpath)
 {
-    cv::Vec4f point;
-    std::vector<cv::Vec4f> pointsBuffer;
     std::ifstream ifs(fpath.c_str(), std::ios::in | std::ios::binary);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    cloud->is_dense = false;
+    cv::Vec4f point;
     while(ifs.good())
     {
         ifs.read((char *) &point, 4*sizeof(float));
-        pointsBuffer.push_back(point);
+        cloud->push_back(PointXYZI_(point));
     }
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
-    cloud->width = pointsBuffer.size();
-    cloud->height = 1;
-    cloud->points.resize(cloud->width * cloud->height);
-    cloud->is_dense = false;
-
-    pcl::PointXYZI pointTo;
-    for (size_t i = 0; i < cloud->width; ++i)
-    {
-        point = pointsBuffer[i];
-        pointTo = cloud->points[i];
-        pointTo.x = point[0];
-        pointTo.y = point[1];
-        pointTo.z = point[2];
-        pointTo.intensity = point[3];
-    }
-
     return *cloud;
 }
 
 std::vector<pcl::PointCloud<pcl::PointXYZI>> KittiReader::getPointclouds(std::vector<cv::String> fpaths)
 {
-    std::vector<pcl::PointCloud<pcl::PointXYZI>> scans;
-    for(auto const& fpath : fpaths) {
-        auto scan = getPointcloud(fpath);
-        scans.push_back(scan);
+    pcl::PointCloud<pcl::PointXYZI> cloud;
+    std::vector<pcl::PointCloud<pcl::PointXYZI>> clouds;
+    for(auto const& fpath : fpaths) 
+    {
+        cloud = getPointcloud(fpath);
+        clouds.push_back(cloud);
     }
-    return scans;
+    return clouds;
 }
 
 std::vector<float> KittiReader::splitLineByChar(std::string line, char delim)

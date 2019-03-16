@@ -11,7 +11,6 @@
 void callback(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr& input)
 {
     ROS_INFO("Received pointcloud.");
-    sensor_msgs::PointCloud2 output;
     std::cout << "shape: (" << input->width << ", " << input->height << ")" << std::endl;
 }
 
@@ -27,7 +26,7 @@ int main(int argc, char **argv)
     std::vector<pcl::PointCloud<pcl::PointXYZI>> pointclouds = KittiReader::getPointclouds(fpaths);
 
     auto cloud = pointclouds[0];
-    std::cout << "shape: (" << cloud.height << ", " << cloud.width << ")" << std::endl;
+    std::cout << "shape: (" << cloud.width << ", " << cloud.height << ")" << std::endl;
 
     ros::Rate loop_rate(0.05);
     int count = 0;
