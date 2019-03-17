@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 
     std::string basedir = argv[1];
     Calibration calib = KittiReader::makeCalib(basedir);
-    cv::Mat mat = calib.getVeloToImage2();
+    cv::Mat mat = calib.getVeloToImage();
     cv_bridge::CvImage calibMatrix;
 
     calibMatrix.encoding = sensor_msgs::image_encodings::TYPE_32FC1;

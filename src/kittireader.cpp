@@ -7,7 +7,7 @@
 KittiReader::KittiReader(std::string basedir)
 {
     auto calib = makeCalib(basedir);
-    auto PRT = calib.getVeloToImage2();
+    auto PRT = calib.getVeloToImage();
 }
 
 std::vector<cv::String> KittiReader::globFilesHelper(std::string pattern)

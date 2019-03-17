@@ -23,8 +23,8 @@ class Calibration
 
         cv::Mat getVeloToCam0Unrect();
         cv::Mat getCam0UnrectToCam0Rect();
-        cv::Mat getCam0RectToImage2();
-        cv::Mat getVeloToImage2();
+        cv::Mat getCam0RectToImage();
+        cv::Mat getVeloToImage();
 };
 
 #endif

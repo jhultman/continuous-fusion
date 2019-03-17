@@ -65,18 +65,18 @@ cv::Mat Calibration::getCam0UnrectToCam0Rect()
     return R4x4;
 }
 
-cv::Mat Calibration::getCam0RectToImage2()
+cv::Mat Calibration::getCam0RectToImage()
 {
     cv::Mat mat3x4 = cv::Mat(_camToCam.at("P_rect_02")).reshape(1, 3);
     cv::Mat mat4x4 = Calibration::vconcatRow(mat3x4);
     return mat4x4;
 }
 
-cv::Mat Calibration::getVeloToImage2()
+cv::Mat Calibration::getVeloToImage()
 {
     auto T = getVeloToCam0Unrect();
     auto R = getCam0UnrectToCam0Rect();
-    auto P = getCam0RectToImage2();
+    auto P = getCam0RectToImage();
     auto PRT = P * R * T;
     return PRT;
 }
