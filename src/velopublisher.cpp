@@ -1,12 +1,7 @@
 #include "kittireader.hpp"
-
-#include <opencv2/opencv.hpp>
-
 #include "ros/ros.h"
-#include "std_msgs/String.h"
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
 
 void callback(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr& input)
 {
