@@ -5,30 +5,12 @@
 #include "ros/ros.h"
 #include <opencv2/opencv.hpp>
 
-void callback(const sensor_msgs::ImageConstPtr& msg)
-{
-    ROS_INFO("Received image.");
-    cv_bridge::CvImagePtr cv_ptr;
-    try
-    {
-        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-        auto image = cv_ptr->image;
-        std::cout << "shape: (" << image.rows << ", " << image.cols << ")" << std::endl;
-    }
-    catch (cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge failure upon image receipt: %s", e.what());
-    }
-}
-
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "kitticamera");
     ros::NodeHandle nh;
     image_transport::ImageTransport xport(nh);
-
     image_transport::Publisher publisher = xport.advertise("/camera/image", 1);
-    image_transport::Subscriber subscriber = xport.subscribe("/camera/image", 1, callback);
 
     std::string globPattern = std::string(argv[1]) + "image_02/data/*.png";
     std::vector<cv::String> fpaths = KittiReader::globFilesHelper(globPattern);
@@ -38,7 +20,7 @@ int main(int argc, char **argv)
     cameraImage.encoding = sensor_msgs::image_encodings::BGR8;
     cameraImage.image = images[0];
 
-    ros::Rate loop_rate(0.05);
+    ros::Rate loop_rate(1);
     int count = 0;
     while (ros::ok())
     {
