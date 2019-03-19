@@ -6,6 +6,8 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
+#include <opencv2/core/eigen.hpp>
+
 void callback(
     const sensor_msgs::ImageConstPtr& imageIn, 
     const sensor_msgs::PointCloud2ConstPtr& veloIn)
@@ -19,6 +21,20 @@ void callback(
         auto image = cv_ptr->image;
         std::cout << "shape: (" << image.rows << ", " << image.cols << ")" << std::endl;
         std::cout << "shape: (" << veloIn->height << ", " << veloIn->width << ")" << std::endl;
+
+        // Avoid memcpy through underlying eigen mat
+        // Note: eigen is row-major
+        pcl::PointCloud<pcl::PointXYZI> cloud;
+        pcl::fromROSMsg(*veloIn, cloud);
+
+        cv::Mat dst;
+        Eigen::MatrixXf src;
+        pcl::PCLPointCloud2 pcl2;
+        pcl::toPCLPointCloud2(cloud, pcl2);
+        pcl::getPointCloudAsEigen(pcl2, src);
+        eigen2cv(src, dst);
+
+        std::cout << dst.rows << ", " << dst.cols << ", " << dst.channels() << std::endl;
     }
     catch (cv_bridge::Exception& e)
     {
