@@ -1,9 +1,14 @@
+#include "bevprojector.hpp"
 #include <iostream>
-#include <vector>
 #include <opencv2/opencv.hpp>
 #include <opencv2/flann.hpp>
 
-cv::Mat row_linspace(int start, int end, int n)
+BevProjector::BevProjector(cv::Mat PRT)
+{
+    _xform = PRT;
+}
+
+cv::Mat BevProjector::row_linspace(int start, int end, size_t n)
 {
     float step = (end - start + 1) / n;
     cv::Mat m(1, n, CV_32F);
@@ -14,7 +19,7 @@ cv::Mat row_linspace(int start, int end, int n)
     return m;
 }
 
-cv::Mat col_linspace(int start, int end, int n)
+cv::Mat BevProjector::col_linspace(int start, int end, size_t n)
 {
     float step = (end - start + 1) / n;
     cv::Mat m(n, 1, CV_32F);
@@ -25,7 +30,7 @@ cv::Mat col_linspace(int start, int end, int n)
     return m;
 }
 
-cv::Mat meshgrid(cv::Mat x_lin, cv::Mat y_lin)
+cv::Mat BevProjector::meshgrid(cv::Mat x_lin, cv::Mat y_lin)
 {
     int numel = x_lin.cols * y_lin.rows;
     cv::Mat x = cv::repeat(x_lin, y_lin.rows, 1).reshape(1, numel);
@@ -35,7 +40,7 @@ cv::Mat meshgrid(cv::Mat x_lin, cv::Mat y_lin)
     return xy;
 }
 
-cv::Mat makeRandBGR8(size_t nrows, size_t ncols)
+cv::Mat BevProjector::makeRandBGR8(size_t nrows, size_t ncols)
 {
     cv::Mat mat;
     cv::Mat mat_float(nrows, ncols, CV_32FC3);
@@ -44,32 +49,8 @@ cv::Mat makeRandBGR8(size_t nrows, size_t ncols)
     return mat;
 }
 
-int main()
+void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indices, cv::Mat dists)
 {
-    // Can choose independently: num lidar points, FPV image size, BEV image size
-    size_t bev_nrows = 20;
-    size_t bev_ncols = 40;
-
-    cv::Mat x_lin = row_linspace(0, 30, bev_nrows);
-    cv::Mat y_lin = col_linspace(0, 40, bev_ncols);
-    cv::Mat bev_pixel_locs = meshgrid(x_lin, y_lin); 
-    cv::Mat bev_pixel_vals = cv::Mat(bev_nrows * bev_ncols, 1, CV_32FC3);
-
-    size_t fpv_nrows = 25;
-    size_t fpv_ncols = 15;
-    cv::Mat fpv_pixel_vals = makeRandBGR8(fpv_nrows * fpv_ncols, 1);
-
-    size_t bev_npoints_lidar = 1100;
-    cv::Mat bev_lidar_points(bev_npoints_lidar, 2, CV_32FC1);
-    cv::randu(bev_lidar_points, 0, 20);
-
-    // TODO: Switch to cvflann::KDTreeSingleIndexParalidarms for performance
-    cv::flann::Index flann_index(bev_lidar_points, cv::flann::KDTreeIndexParams(1));
-
-    unsigned int knn = 3;
-    cv::Mat indices, dists;
-    flann_index.knnSearch(bev_pixel_locs, indices, dists, knn, cv::flann::SearchParams(32));
-
     float weight;
     float sumWeight;
     cv::Vec3f pixelVal;
@@ -81,16 +62,52 @@ int main()
         sumWeight = 0;
 
         // Gather mean pixel val from knn
-        for (int n = 0; n < knn; ++n)
+        for (int n = 0; n < indices.cols; ++n)
         {
             indexFrom = indices.at<int>(m, n);
-            pixelVal = fpv_pixel_vals.at<cv::Vec3b>(indexFrom);
+            pixelVal = fpvImage.at<cv::Vec3b>(indexFrom);
             weight = dists.at<float>(m, n);
             meanPixelVal += weight * pixelVal;
             sumWeight += weight;
         }
 
         meanPixelVal /= sumWeight;
-        bev_pixel_vals.at<cv::Vec3f>(m) = meanPixelVal;
+        bevImage.at<cv::Vec3f>(m) = meanPixelVal;
     }
+}
+
+cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat bevLidarPoints)
+{
+    size_t bevNumRows = 20;
+    size_t bevNumCols = 40;
+
+    cv::Mat x_lin = BevProjector::row_linspace(0, 30, bevNumRows);
+    cv::Mat y_lin = BevProjector::col_linspace(0, 40, bevNumCols);
+    cv::Mat bevPixelLocs = BevProjector::meshgrid(x_lin, y_lin); 
+    cv::Mat bevPixelVals = cv::Mat(bevNumRows * bevNumCols, 1, CV_32FC3);
+
+    unsigned int knn = 3;
+    cv::Mat indices, dists;
+
+    // TODO: Switch to cvflann::KDTreeSingleIndexParalidarms for performance
+    cv::flann::Index flann_index(bevLidarPoints, cv::flann::KDTreeIndexParams(1));
+    flann_index.knnSearch(bevPixelLocs, indices, dists, knn, cv::flann::SearchParams(32));
+    BevProjector::fillBevImage(bevPixelVals, fpvPixelVals, indices, dists);
+    return bevPixelVals;
+}
+
+int main()
+{
+    cv::Mat PRT = cv::Mat::eye(4, 4, CV_32F);
+    BevProjector proj = BevProjector(PRT);
+
+    // Can choose independently: num lidar points, FPV image size, BEV image size
+    size_t fpvNumRows = 25;
+    size_t fpvNumCols = 15;
+    cv::Mat fpvPixelVals = BevProjector::makeRandBGR8(fpvNumRows * fpvNumCols, 1);
+
+    size_t bevNumLidar = 1100;
+    cv::Mat bevLidarPoints(bevNumLidar, 2, CV_32FC1);
+    cv::randu(bevLidarPoints, 0, 20);
+    cv::Mat bevImage = proj.getBevImage(fpvPixelVals, bevLidarPoints);
 }
