@@ -8,6 +8,8 @@ class BevProjector
 
     private:
         cv::Mat _xform;
+        cv::Mat lidarToImage(cv::Mat lidarPoints, cv::Mat PRT);
+        cv::Mat divideRow(cv::Mat mat, cv::Mat row);
 
     public:
         BevProjector(cv::Mat PRT);

@@ -90,18 +90,18 @@ target_link_libraries(kittivelo
     ${PCL_LIBRARIES}
 )
 
-add_executable(kittisynchronizer
-    src/kittisynchronizer.cpp
+add_executable(continuousfusion
+    src/continuousfusion.cpp
     src/kittireader.cpp
     src/calibration.cpp
 )
 
-add_dependencies(kittisynchronizer
+add_dependencies(continuousfusion
     ${catkin_EXPORTED_TARGETS} 
     ${${PROJECT_NAME}_EXPORTED_TARGETS}
 )
 
-target_link_libraries(kittisynchronizer
+target_link_libraries(continuousfusion
   ${catkin_LIBRARIES} 
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}

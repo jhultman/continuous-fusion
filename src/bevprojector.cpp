@@ -49,6 +49,24 @@ cv::Mat BevProjector::makeRandBGR8(size_t nrows, size_t ncols)
     return mat;
 }
 
+cv::Mat BevProjector::divideRow(cv::Mat mat, cv::Mat row)
+{
+    assert(mat.cols == row.cols);
+    assert(mat.channels() == row.channels());
+    return mat / cv::repeat(row, mat.cols, 1);
+}
+
+cv::Mat BevProjector::lidarToImage(cv::Mat lidarPoints, cv::Mat PRT)
+{
+    cv::Mat homogeneousLidar;
+    lidarPoints.copyTo(homogeneousLidar);
+    cv::Mat ones = cv::Mat::ones(1, lidarPoints.cols, CV_32F);
+    ones.copyTo(homogeneousLidar.rowRange(3, 4));
+    cv::Mat lidarImage = PRT * homogeneousLidar;
+    lidarImage = divideRow(lidarImage, lidarImage.row(2));
+    return lidarImage.rowRange(0, 2);
+}
+
 void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indices, cv::Mat dists)
 {
     float weight;
