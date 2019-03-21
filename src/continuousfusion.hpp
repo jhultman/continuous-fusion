@@ -2,7 +2,12 @@
 #define CONTINUOUSFUSION_HPP
 
 #include <vector>
+#include <sensor_msgs/Image.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/eigen.hpp>
+#include <Eigen/Dense>
 
 class ContinuousFusion
 {
@@ -17,7 +22,6 @@ class ContinuousFusion
         void callback(
             const sensor_msgs::ImageConstPtr& imageIn, 
             const sensor_msgs::PointCloud2ConstPtr& veloIn);
-
 };
 
 #endif

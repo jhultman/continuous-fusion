@@ -1,13 +1,18 @@
+#include "bevprojector.hpp"
+#include "continuousfusion.hpp"
 #include "kittireader.hpp"
+
 #include "ros/ros.h"
 #include <sensor_msgs/Image.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
-#include "continuousfusion.hpp"
 #include <opencv2/core/eigen.hpp>
+#include <Eigen/Dense>
 
 ContinuousFusion::ContinuousFusion(cv::Mat PRT)
 {
@@ -49,11 +54,12 @@ void ContinuousFusion::callback(
     {
         cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(imageIn, sensor_msgs::image_encodings::BGR8);
         cv::Mat image = cv_ptr->image;
-        cv::Mat dst = rosMsgToCvMat(veloIn);
+        cv::Mat lidar = rosMsgToCvMat(veloIn);
     }
     catch (cv_bridge::Exception& e)
     {
         ROS_ERROR("cv_bridge failure upon image receipt: %s", e.what());
+        return;
     }
 }
 
