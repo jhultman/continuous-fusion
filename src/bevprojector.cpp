@@ -54,18 +54,29 @@ cv::Mat BevProjector::divideRow(cv::Mat mat, cv::Mat row)
 {
     assert(mat.cols == row.cols);
     assert(mat.channels() == row.channels());
-    return mat / cv::repeat(row, mat.cols, 1);
+    return mat / cv::repeat(row, mat.rows, 1);
 }
 
 cv::Mat BevProjector::lidarToImage(cv::Mat lidarPoints, cv::Mat PRT)
 {
     cv::Mat homogeneousLidar;
-    lidarPoints.copyTo(homogeneousLidar);
     cv::Mat ones = cv::Mat::ones(1, lidarPoints.cols, CV_32F);
-    ones.copyTo(homogeneousLidar.rowRange(3, 4));
+    homogeneousLidar.push_back(lidarPoints.row(0));
+    homogeneousLidar.push_back(lidarPoints.row(1));
+    homogeneousLidar.push_back(lidarPoints.row(2));
+    homogeneousLidar.push_back(ones);
+    homogeneousLidar.resize(4, lidarPoints.cols);
     cv::Mat lidarImage = PRT * homogeneousLidar;
-    lidarImage = divideRow(lidarImage, lidarImage.row(2));
-    return lidarImage.rowRange(0, 2);
+
+    cv::Mat row = lidarImage.row(2);
+    row.resize(1, lidarImage.cols);
+
+    cv::Mat divided = divideRow(lidarImage, lidarImage.row(2));
+    cv::Mat uvCoords;
+    uvCoords.push_back(divided.row(0));
+    uvCoords.push_back(divided.row(1));
+    uvCoords.resize(2, divided.cols);
+    return uvCoords;
 }
 
 cv::Point3f BevProjector::bilinearInterp(cv::Mat img, cv::Point2f pt)
@@ -77,50 +88,60 @@ cv::Point3f BevProjector::bilinearInterp(cv::Mat img, cv::Point2f pt)
     return cv::Point3f(0, 0, 0);
 }
 
-cv::Mat BevProjector::knnIndicesLidarToIndicesImage(cv::Mat indices, cv::Mat lidarPoints, cv::Mat xform)
+cv::Mat BevProjector::knnIndicesLidarToIndicesImage(cv::Mat indicesLidar, cv::Mat lidarPoints, cv::Mat PRT)
 {
-    cv::Mat lidarPointsImage = BevProjector::lidarToImage(lidarPoints, xform);
-    cv::Mat indicesImage = cv::Mat(indices.rows, 2, CV_32S);
-    cv::Point2f pointImage;
+    int rows = indicesLidar.rows;
+    int cols = indicesLidar.cols;
+
+    cv::Mat lidarPointsImage = BevProjector::lidarToImage(lidarPoints, PRT).t();
+    cv::Mat indicesImage = cv::Mat(rows, cols, CV_32SC2);
+    cv::Vec2i pointImage;
     int index;
-    for (int i = 0; i < indices.rows; ++i)
+    for (int i = 0; i < rows; ++i)
     {
-        index = indices.at<int>(i);
-        pointImage = lidarPointsImage.at<cv::Vec2f>(index);
-        indicesImage.at<int>(index, 0) = pointImage.x;
-        indicesImage.at<int>(index, 1) = pointImage.y;
+        for (int j = 0; j < cols; ++j)
+        {
+            index = indicesLidar.at<int>(i, j);
+            pointImage = lidarPointsImage.row(index);
+            indicesImage.at<cv::Vec2i>(i, j)[0] = static_cast<int>(pointImage[0]);
+            indicesImage.at<cv::Vec2i>(i, j)[1] = static_cast<int>(pointImage[1]);
+        }
     }
     return indicesImage;
 }
 
-void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indices, cv::Mat dists)
+void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indicesImage, cv::Mat dists)
 {
     float weight;
     float sumWeight;
     cv::Vec3f pixelVal;
     cv::Vec3f meanPixelVal;
-    int indexFrom;
-    for (int m = 0; m < indices.rows; ++m)
+    cv::Vec2i indexFrom;
+    for (int i = 0; i < indicesImage.rows; ++i)
     {
         meanPixelVal = 0;
         sumWeight = 0;
 
         // Gather mean pixel val from knn
-        for (int n = 0; n < indices.cols; ++n)
+        for (int j = 0; j < indicesImage.cols; ++j)
         {
-            indexFrom = indices.at<int>(m, n);
-            pixelVal = fpvImage.at<cv::Vec3b>(indexFrom / fpvImage.cols, indexFrom % fpvImage.cols);
-            weight = dists.at<float>(m, n);
+            indexFrom = indicesImage.at<int>(i, j);
+            if ((indexFrom[0] >= fpvImage.rows) || (indexFrom[0] < 0) ||
+                (indexFrom[1] >= fpvImage.cols) || (indexFrom[1] < 0))
+            {
+                    continue;
+            }
+            pixelVal = fpvImage.at<cv::Vec3b>(indexFrom[0], indexFrom[1]);
+            weight = dists.at<float>(i, j);
             meanPixelVal += weight * pixelVal;
             sumWeight += weight;
         }
-
         meanPixelVal /= sumWeight;
-        bevImage.at<cv::Vec3f>(m) = meanPixelVal;
+        bevImage.at<cv::Vec3f>(i) = meanPixelVal;
     }
 }
 
-cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat bevLidarPoints)
+cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat lidarPoints, cv::Mat PRT)
 {
     size_t bevNumRows = 400;
     size_t bevNumCols = 400;
@@ -130,31 +151,15 @@ cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat bevLidarPoints)
     cv::Mat bevPixelLocs = BevProjector::meshgrid(x_lin, y_lin); 
     cv::Mat bevPixelVals = cv::Mat(bevNumRows * bevNumCols, 1, CV_32FC3);
 
-    unsigned int knn = 5;
-    cv::Mat indices, dists;
-
     // TODO: Switch to cvflann::KDTreeSingleIndexParalidarms for performance
+    unsigned int knn = 5;
+    cv::Mat indicesLidar, dists;
+    cv::Mat bevLidarPoints = lidarPoints.rowRange(0, 2).t();
+
     cv::flann::Index flann_index(bevLidarPoints, cv::flann::KDTreeIndexParams(1));
-    flann_index.knnSearch(bevPixelLocs, indices, dists, knn, cv::flann::SearchParams(32));
-    BevProjector::fillBevImage(bevPixelVals, fpvPixelVals, indices, dists);
+    flann_index.knnSearch(bevPixelLocs, indicesLidar, dists, knn, cv::flann::SearchParams(32));
+    cv::Mat indicesImage = knnIndicesLidarToIndicesImage(indicesLidar, lidarPoints, PRT);
+    BevProjector::fillBevImage(bevPixelVals, fpvPixelVals, indicesImage, dists);
     bevPixelVals.resize(bevNumRows, bevNumCols);
     return bevPixelVals;
-}
-
-int main()
-{
-    cv::Mat PRT = cv::Mat::eye(4, 4, CV_32F);
-    BevProjector proj = BevProjector(PRT);
-
-    // Can choose independently: num lidar points, FPV image size, BEV image size
-    size_t fpvNumRows = 25;
-    size_t fpvNumCols = 15;
-    cv::Mat fpvPixelVals = BevProjector::makeRandBGR8(fpvNumRows * fpvNumCols, 1);
-
-    size_t bevNumLidar = 1100;
-    cv::Mat bevLidarPoints(bevNumLidar, 2, CV_32FC1);
-    cv::randu(bevLidarPoints, 0, 20);
-    cv::Mat bevImage = proj.getBevImage(fpvPixelVals, bevLidarPoints);
-
-    std::cout << "Ran bev projector" << std::endl;
 }

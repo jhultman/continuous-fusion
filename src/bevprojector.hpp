@@ -13,8 +13,8 @@ class BevProjector
         BevProjector(cv::Mat PRT);
         static cv::Mat divideRow(cv::Mat mat, cv::Mat row);
         static cv::Mat lidarToImage(cv::Mat lidarPoints, cv::Mat PRT);
-        static cv::Mat getBevImage(cv::Mat fpvPixelVals, cv::Mat bevLidarPoints);
-        static cv::Mat knnIndicesLidarToIndicesImage(cv::Mat indices, cv::Mat lidarPoints, cv::Mat xform);
+        static cv::Mat getBevImage(cv::Mat fpvPixelVals, cv::Mat lidarPoints, cv::Mat PRT);
+        static cv::Mat knnIndicesLidarToIndicesImage(cv::Mat indices, cv::Mat lidarPoints, cv::Mat PRT);
         static void fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indices, cv::Mat dists);
         static cv::Mat row_linspace(int start, int end, size_t n);
         static cv::Mat col_linspace(int start, int end, size_t n);

@@ -1,1 +1,0 @@
-rosrun continuous_fusion kittisynchronizer

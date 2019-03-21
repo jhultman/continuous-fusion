@@ -101,6 +101,7 @@ add_executable(continuousfusion
     src/continuousfusion.cpp
     src/kittireader.cpp
     src/calibration.cpp
+    src/bevprojector.cpp
 )
 
 add_dependencies(continuousfusion

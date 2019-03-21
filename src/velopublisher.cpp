@@ -11,8 +11,9 @@ int main(int argc, char **argv)
 
     std::string globPattern = std::string(argv[1]) + "velodyne_points/data/*.bin";
     std::vector<cv::String> fpaths = KittiReader::globFilesHelper(globPattern);
-    std::vector<pcl::PointCloud<pcl::PointXYZI>> pointclouds = KittiReader::getPointclouds(fpaths);
-    auto cloud = pointclouds[0];
+//    std::vector<pcl::PointCloud<pcl::PointXYZI>> pointclouds = KittiReader::getPointclouds(fpaths);
+
+    auto cloud = KittiReader::getPointcloud(fpaths[0]);
     cloud.header.frame_id = "kitti_frame";
 
     ros::Rate loop_rate(1);
@@ -20,7 +21,6 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         ROS_INFO("Publishing pointcloud.");
-        std::cout << "Header: " << cloud.header << std::endl;
         publisher.publish(cloud);
         ros::spinOnce();
         loop_rate.sleep();
