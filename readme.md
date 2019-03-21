@@ -3,18 +3,17 @@
 Implementation of continuous fusion layer
 for projecting FPV image into BEV using LIDAR.
 
-Compile with:
-`g++ -o makebag main.cpp `pkg-config opencv --cflags --libs``
+Launch rosnodes using shell scripts in tools.
 
-Execute with:
-`./makebag ~/Downloads/kitti_data/2011_09_26/2011_09_26_drive_0005_sync/`
+To visualize in rviz:
+    1. Run world frame publisher using script in tools.
+    2. Run velo node to publish pointcloud.
+    3. Open viz with `rosrun rviz rviz`.
 
+Comments on coordinate systems:
 
-Note on coordinate systems:
-
-    Following (7) in Geiger et al., points x_velo 
-    in velodyne coords are sent to points x_image 
-    in the image plane of camera 2 using: 
+    Points x_velo in velodyne coords are sent to points x_image 
+    in the image plane of camera 2 using (7) in Geiger et al.:
 
         x_image = P * R * T * x_velo, 
         
