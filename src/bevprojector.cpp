@@ -11,22 +11,22 @@ BevProjector::BevProjector(cv::Mat PRT)
 
 cv::Mat BevProjector::row_linspace(int start, int end, size_t n)
 {
-    float step = (end - start + 1) / n;
     cv::Mat m(1, n, CV_32F);
+    float step = (end - start) / static_cast<float>(n - 1);
     for (int j = 0; j < n; ++j)
     {
-        m.at<float>(0, j) = j * step + 0.5;
+        m.at<float>(0, j) = start + j * step;
     }
     return m;
 }
 
 cv::Mat BevProjector::col_linspace(int start, int end, size_t n)
 {
-    float step = (end - start + 1) / n;
     cv::Mat m(n, 1, CV_32F);
+    float step = (end - start) / static_cast<float>(n - 1);
     for (int i = 0; i < n; ++i)
     {
-        m.at<float>(i, 0) = i * step + 0.5;
+        m.at<float>(i, 0) = start + i * step;
     }
     return m;
 }
@@ -59,23 +59,17 @@ cv::Mat BevProjector::divideRow(cv::Mat mat, cv::Mat row)
 
 cv::Mat BevProjector::lidarToImage(cv::Mat lidarPoints, cv::Mat PRT)
 {
-    cv::Mat homogeneousLidar;
-    cv::Mat ones = cv::Mat::ones(1, lidarPoints.cols, CV_32F);
-    homogeneousLidar.push_back(lidarPoints.row(0));
-    homogeneousLidar.push_back(lidarPoints.row(1));
-    homogeneousLidar.push_back(lidarPoints.row(2));
+    cv::Mat homogeneousLidar(0, lidarPoints.cols, CV_32FC1);
+    cv::Mat ones = cv::Mat::ones(1, lidarPoints.cols, CV_32FC1);
+    homogeneousLidar.push_back(lidarPoints.rowRange(0, 3));
     homogeneousLidar.push_back(ones);
-    homogeneousLidar.resize(4, lidarPoints.cols);
+    homogeneousLidar = homogeneousLidar.reshape(1, 4);
     cv::Mat lidarImage = PRT * homogeneousLidar;
-
-    cv::Mat row = lidarImage.row(2);
-    row.resize(1, lidarImage.cols);
-
+    cv::Mat row = lidarImage.row(2).reshape(1, 1);
     cv::Mat divided = divideRow(lidarImage, lidarImage.row(2));
     cv::Mat uvCoords;
-    uvCoords.push_back(divided.row(0));
-    uvCoords.push_back(divided.row(1));
-    uvCoords.resize(2, divided.cols);
+    uvCoords.push_back(divided.rowRange(0, 2));
+    uvCoords = uvCoords.reshape(1, 2);
     return uvCoords;
 }
 
@@ -94,6 +88,7 @@ cv::Mat BevProjector::knnIndicesLidarToIndicesImage(cv::Mat indicesLidar, cv::Ma
     int cols = indicesLidar.cols;
 
     cv::Mat lidarPointsImage = BevProjector::lidarToImage(lidarPoints, PRT).t();
+
     cv::Mat indicesImage = cv::Mat(rows, cols, CV_32SC2);
     cv::Vec2i pointImage;
     int index;
@@ -117,6 +112,10 @@ void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indi
     cv::Vec3f pixelVal;
     cv::Vec3f meanPixelVal;
     cv::Vec2i indexFrom;
+
+    cv::Mat fpvImageF;
+    fpvImage.convertTo(fpvImageF, CV_32FC3);
+
     for (int i = 0; i < indicesImage.rows; ++i)
     {
         meanPixelVal = 0;
@@ -125,18 +124,25 @@ void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indi
         // Gather mean pixel val from knn
         for (int j = 0; j < indicesImage.cols; ++j)
         {
-            indexFrom = indicesImage.at<int>(i, j);
-            if ((indexFrom[0] >= fpvImage.rows) || (indexFrom[0] < 0) ||
-                (indexFrom[1] >= fpvImage.cols) || (indexFrom[1] < 0))
+            indexFrom = indicesImage.at<cv::Vec2i>(i, j);
+            int r = static_cast<int>(indexFrom[0]);
+            int c = static_cast<int>(indexFrom[1]);
+
+            if ((r >= fpvImage.rows) || (r < 0) ||
+                (c >= fpvImage.cols) || (c < 0))
             {
-                    continue;
+                continue;
             }
-            pixelVal = fpvImage.at<cv::Vec3b>(indexFrom[0], indexFrom[1]);
+
+            pixelVal = fpvImageF.at<cv::Vec3f>(r, c);
             weight = dists.at<float>(i, j);
             meanPixelVal += weight * pixelVal;
             sumWeight += weight;
         }
-        meanPixelVal /= sumWeight;
+        if (sumWeight > 0)
+        {
+            meanPixelVal /= sumWeight;
+        }
         bevImage.at<cv::Vec3f>(i) = meanPixelVal;
     }
 }
@@ -149,7 +155,7 @@ cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat lidarPoints, cv:
     cv::Mat x_lin = BevProjector::row_linspace(0, 80, bevNumRows);
     cv::Mat y_lin = BevProjector::col_linspace(-40, 40, bevNumCols);
     cv::Mat bevPixelLocs = BevProjector::meshgrid(x_lin, y_lin); 
-    cv::Mat bevPixelVals = cv::Mat(bevNumRows * bevNumCols, 1, CV_32FC3);
+    cv::Mat bevPixelVals = cv::Mat::zeros(bevNumRows * bevNumCols, 1, CV_32FC3);
 
     // TODO: Switch to cvflann::KDTreeSingleIndexParalidarms for performance
     unsigned int knn = 5;
@@ -160,6 +166,6 @@ cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat lidarPoints, cv:
     flann_index.knnSearch(bevPixelLocs, indicesLidar, dists, knn, cv::flann::SearchParams(32));
     cv::Mat indicesImage = knnIndicesLidarToIndicesImage(indicesLidar, lidarPoints, PRT);
     BevProjector::fillBevImage(bevPixelVals, fpvPixelVals, indicesImage, dists);
-    bevPixelVals.resize(bevNumRows, bevNumCols);
+    bevPixelVals = bevPixelVals.reshape(3, bevNumRows);
     return bevPixelVals;
 }

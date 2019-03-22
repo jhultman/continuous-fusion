@@ -14,20 +14,25 @@ int main(int argc, char **argv)
 
     std::string globPattern = std::string(argv[1]) + "image_02/data/*.png";
     std::vector<cv::String> fpaths = KittiReader::globFilesHelper(globPattern);
-//    std::vector<cv::Mat> images = KittiReader::getImages(fpaths);
-    cv::Mat imageCv = cv::imread(fpaths[0], CV_LOAD_IMAGE_COLOR);
-
     cv_bridge::CvImage cameraImage;
-    cameraImage.encoding = sensor_msgs::image_encodings::BGR8;
-    cameraImage.image = imageCv;
-
+    
+    int count = 0;
     ros::Rate loop_rate(1);
     while (ros::ok())
     {
+        cameraImage.encoding = sensor_msgs::image_encodings::BGR8;
+        cameraImage.image = cv::imread(fpaths[count], CV_LOAD_IMAGE_COLOR);
+
         ROS_INFO("Publishing image.");
         publisher.publish(cameraImage.toImageMsg());
         ros::spinOnce();
         loop_rate.sleep();
+        ++count;
+        if (count == fpaths.size())
+        {
+            ROS_INFO("Looping from beginning.");
+            count = 0;
+        }
     }
     return 0;
 }

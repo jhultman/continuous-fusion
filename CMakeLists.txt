@@ -48,22 +48,6 @@ include_directories(
     ${Eigen_INCLUDE_DIRS}
 )
 
-add_executable(kitticalib 
-    src/calibpublisher.cpp
-    src/kittireader.cpp
-    src/calibration.cpp
-)
-
-add_dependencies(kitticalib
-    ${catkin_EXPORTED_TARGETS} 
-    ${${PROJECT_NAME}_EXPORTED_TARGETS}
-)
-
-target_link_libraries(kitticalib
-    ${catkin_LIBRARIES} 
-    ${OpenCV_LIBRARIES}
-)
-
 add_executable(kitticamera
     src/imagepublisher.cpp
     src/kittireader.cpp
