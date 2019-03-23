@@ -3,13 +3,6 @@
 Implementation of continuous fusion layer
 for projecting FPV image into BEV using LIDAR.
 
-Launch rosnodes using shell scripts in tools.
-
-To visualize in rviz:
-    1. Run world frame publisher using script in tools.
-    2. Run velo node to publish pointcloud.
-    3. Open viz with `rosrun rviz rviz`.
-
 Comments on coordinate systems:
 
     Points x_velo in velodyne coords are sent to points x_image 
