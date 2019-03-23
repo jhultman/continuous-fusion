@@ -25,11 +25,9 @@ class ContinuousFusion
         message_filters::Subscriber<sensor_msgs::Image> _imageSub;
         message_filters::Subscriber<sensor_msgs::PointCloud2> _veloSub;
         message_filters::Synchronizer<KittiSyncPolicy> _sync;
-
         Eigen::MatrixXf pcl2ToEigen(pcl::PCLPointCloud2 cloud);
         pcl::PCLPointCloud2 rosMsgToPcl2(const sensor_msgs::PointCloud2ConstPtr& cloudPtr);
         cv::Mat rosMsgToCvMat(const sensor_msgs::PointCloud2ConstPtr& cloudPtr);
-
         void publishBevImage(cv::Mat bevImage);
 
     public:

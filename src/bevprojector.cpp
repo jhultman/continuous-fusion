@@ -1,13 +1,9 @@
 #include "bevprojector.hpp"
-#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <opencv2/flann.hpp>
 #include <math.h>
 
-BevProjector::BevProjector(cv::Mat PRT)
-{
-    _xform = PRT;
-}
+BevProjector::BevProjector(){}
 
 cv::Mat BevProjector::row_linspace(int start, int end, size_t n)
 {
@@ -127,13 +123,9 @@ void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indi
             indexFrom = indicesImage.at<cv::Vec2i>(i, j);
             int r = static_cast<int>(indexFrom[0]);
             int c = static_cast<int>(indexFrom[1]);
-
             if ((r >= fpvImage.rows) || (r < 0) ||
                 (c >= fpvImage.cols) || (c < 0))
-            {
-                continue;
-            }
-
+            { continue; }
             pixelVal = fpvImageF.at<cv::Vec3f>(r, c);
             weight = dists.at<float>(i, j);
             meanPixelVal += weight * pixelVal;
@@ -147,14 +139,19 @@ void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indi
     }
 }
 
+cv::Mat BevProjector::initBevPixelLocs(size_t bevNumRows, size_t bevNumCols)
+{
+    cv::Mat x_lin = BevProjector::row_linspace(0, 80, bevNumRows);
+    cv::Mat y_lin = BevProjector::col_linspace(-40, 40, bevNumCols);
+    cv::Mat bevPixelLocs = BevProjector::meshgrid(x_lin, y_lin); 
+    return bevPixelLocs;
+}
+
 cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat lidarPoints, cv::Mat PRT)
 {
     size_t bevNumRows = 400;
     size_t bevNumCols = 400;
-
-    cv::Mat x_lin = BevProjector::row_linspace(0, 80, bevNumRows);
-    cv::Mat y_lin = BevProjector::col_linspace(-40, 40, bevNumCols);
-    cv::Mat bevPixelLocs = BevProjector::meshgrid(x_lin, y_lin); 
+    cv::Mat bevPixelLocs = BevProjector::initBevPixelLocs(bevNumRows, bevNumCols);
     cv::Mat bevPixelVals = cv::Mat::zeros(bevNumRows * bevNumCols, 1, CV_32FC3);
 
     // TODO: Switch to cvflann::KDTreeSingleIndexParalidarms for performance

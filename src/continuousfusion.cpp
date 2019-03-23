@@ -1,5 +1,5 @@
-#include "bevprojector.hpp"
 #include "continuousfusion.hpp"
+#include "bevprojector.hpp"
 #include "kittireader.hpp"
 
 #include "ros/ros.h"
@@ -12,7 +12,6 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-
 #include <opencv2/core/eigen.hpp>
 #include <Eigen/Dense>
 
@@ -68,19 +67,11 @@ void ContinuousFusion::callback(
     const sensor_msgs::PointCloud2ConstPtr& veloIn)
 {
     ROS_INFO("Received synchronized image and pointcloud.");
-    try
-    {
-        cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(imageIn, sensor_msgs::image_encodings::BGR8);
-        cv::Mat image = cv_ptr->image;
-        cv::Mat lidar = rosMsgToCvMat(veloIn);
-        cv::Mat bevImage = BevProjector::getBevImage(image, lidar, _PRT);
-        publishBevImage(bevImage);
-    }
-    catch (cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge failure upon image receipt: %s", e.what());
-        return;
-    }
+    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(imageIn, sensor_msgs::image_encodings::BGR8);
+    cv::Mat image = cv_ptr->image;
+    cv::Mat lidar = rosMsgToCvMat(veloIn);
+    cv::Mat bevImage = BevProjector::getBevImage(image, lidar, _PRT);
+    publishBevImage(bevImage);
 }
 
 int main(int argc, char **argv)
@@ -88,7 +79,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "continuousfusion");
     std::string basedir = argv[1];
     cv::Mat PRT = KittiReader::makeCalib(basedir).getVeloToImage();
-    ContinuousFusion fusionNode(PRT);
+    ContinuousFusion node(PRT);
 
     ros::Rate loop_rate(1);
     while (ros::ok())
