@@ -53,6 +53,16 @@ cv::Mat ContinuousFusion::rosMsgToCvMat(const sensor_msgs::PointCloud2ConstPtr& 
     return cvCloud;
 }
 
+void ContinuousFusion::publishBevImage(cv::Mat bevImageCvFloat)
+{
+    cv::Mat bevImageCv;
+    bevImageCvFloat.convertTo(bevImageCv, CV_8UC3);
+    cv_bridge::CvImage bevImage;
+    bevImage.encoding = sensor_msgs::image_encodings::BGR8;
+    bevImage.image = bevImageCv;
+    _publisher.publish(bevImage.toImageMsg());
+}
+
 void ContinuousFusion::callback(
     const sensor_msgs::ImageConstPtr& imageIn, 
     const sensor_msgs::PointCloud2ConstPtr& veloIn)
@@ -63,15 +73,8 @@ void ContinuousFusion::callback(
         cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(imageIn, sensor_msgs::image_encodings::BGR8);
         cv::Mat image = cv_ptr->image;
         cv::Mat lidar = rosMsgToCvMat(veloIn);
-        cv::Mat bevImageCvFloat = BevProjector::getBevImage(image, lidar, _PRT);
-        cv::Mat bevImageCv;
-        bevImageCvFloat.convertTo(bevImageCv, CV_8UC3);
-
-        cv_bridge::CvImage bevImage;
-        bevImage.encoding = sensor_msgs::image_encodings::BGR8;
-        bevImage.image = bevImageCv;
-        _publisher.publish(bevImage.toImageMsg());
-        ROS_INFO("Published BEV image.");
+        cv::Mat bevImage = BevProjector::getBevImage(image, lidar, _PRT);
+        publishBevImage(bevImage);
     }
     catch (cv_bridge::Exception& e)
     {
@@ -84,8 +87,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "continuousfusion");
     std::string basedir = argv[1];
-    Calibration calib = KittiReader::makeCalib(basedir);
-    cv::Mat PRT = calib.getVeloToImage();
+    cv::Mat PRT = KittiReader::makeCalib(basedir).getVeloToImage();
     ContinuousFusion fusionNode(PRT);
 
     ros::Rate loop_rate(1);

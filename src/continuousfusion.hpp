@@ -30,6 +30,8 @@ class ContinuousFusion
         pcl::PCLPointCloud2 rosMsgToPcl2(const sensor_msgs::PointCloud2ConstPtr& cloudPtr);
         cv::Mat rosMsgToCvMat(const sensor_msgs::PointCloud2ConstPtr& cloudPtr);
 
+        void publishBevImage(cv::Mat bevImage);
+
     public:
         ContinuousFusion(cv::Mat PRT);
         void callback(
