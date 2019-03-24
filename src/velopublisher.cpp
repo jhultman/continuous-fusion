@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     std::string globPattern = std::string(argv[1]) + "velodyne_points/data/*.bin";
     std::vector<cv::String> fpaths = KittiReader::globFilesHelper(globPattern);
 
-    ros::Rate loop_rate(1);
+    ros::Rate loop_rate(10);
     int count = 0;
     while (ros::ok())
     {

@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     std::vector<cv::String> fpaths = KittiReader::globFilesHelper(globPattern);
     
     int count = 0;
-    ros::Rate loop_rate(1);
+    ros::Rate loop_rate(10);
     while (ros::ok())
     {
         ROS_INFO("Publishing image.");

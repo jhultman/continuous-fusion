@@ -13,6 +13,7 @@ class BevProjector
         static cv::Mat meshgrid(cv::Mat x_lin, cv::Mat y_lin);
         static cv::Mat makeRandBGR8(size_t nrows, size_t ncols);
         static cv::Point3f bilinearInterp(cv::Mat img, cv::Point2f pt);
+        static void maskOutOfFrustum(cv::Mat bevImage);
 
     public:
         BevProjector();

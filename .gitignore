@@ -7,3 +7,6 @@ src/*.o
 
 # vscode
 .vscode/*
+
+# ROSbags
+images/*.bag

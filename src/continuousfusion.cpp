@@ -80,12 +80,6 @@ int main(int argc, char **argv)
     std::string basedir = argv[1];
     cv::Mat PRT = KittiReader::makeCalib(basedir).getVeloToImage();
     ContinuousFusion node(PRT);
-
-    ros::Rate loop_rate(1);
-    while (ros::ok())
-    {
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
+    ros::spin();
     return 0;
 }

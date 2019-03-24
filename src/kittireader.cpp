@@ -40,6 +40,7 @@ pcl::PointXYZI PointXYZI_(cv::Vec4f fields)
 
 pcl::PointCloud<pcl::PointXYZI> KittiReader::getPointcloud(cv::String fpath)
 {
+    // Points outside approximate camera viewing frustum filtered.
     std::ifstream ifs(fpath.c_str(), std::ios::in | std::ios::binary);
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     cloud->is_dense = false;
@@ -47,7 +48,16 @@ pcl::PointCloud<pcl::PointXYZI> KittiReader::getPointcloud(cv::String fpath)
     while(ifs.good())
     {
         ifs.read((char *) &point, 4*sizeof(float));
-        cloud->push_back(PointXYZI_(point));
+        if (
+            (point[0] > 0) & 
+            (abs(point[0]) > abs(point[1])) & 
+            (point[0] > 0) & 
+            (point[0] < 48) & 
+            (point[1] > -24) &
+            (point[1] < 24))
+        {
+            cloud->push_back(PointXYZI_(point));
+        }
     }
     return *cloud;
 }

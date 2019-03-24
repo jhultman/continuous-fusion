@@ -3,6 +3,8 @@
 Implementation of continuous fusion layer
 for projecting FPV image into BEV using LIDAR.
 
+![Fusion](/images/demo.gif)
+
 Comments on coordinate systems:
 
     Points x_velo in velodyne coords are sent to points x_image 

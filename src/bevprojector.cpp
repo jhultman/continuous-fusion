@@ -7,24 +7,24 @@ BevProjector::BevProjector(){}
 
 cv::Mat BevProjector::row_linspace(int start, int end, size_t n)
 {
-    cv::Mat m(1, n, CV_32F);
+    cv::Mat v(1, n, CV_32F);
     float step = (end - start) / static_cast<float>(n - 1);
     for (int j = 0; j < n; ++j)
     {
-        m.at<float>(0, j) = start + j * step;
+        v.at<float>(0, j) = start + j * step;
     }
-    return m;
+    return v;
 }
 
 cv::Mat BevProjector::col_linspace(int start, int end, size_t n)
 {
-    cv::Mat m(n, 1, CV_32F);
+    cv::Mat v(n, 1, CV_32F);
     float step = (end - start) / static_cast<float>(n - 1);
     for (int i = 0; i < n; ++i)
     {
-        m.at<float>(i, 0) = start + i * step;
+        v.at<float>(i, 0) = start + i * step;
     }
-    return m;
+    return v;
 }
 
 cv::Mat BevProjector::meshgrid(cv::Mat x_lin, cv::Mat y_lin)
@@ -121,8 +121,8 @@ void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indi
         for (int j = 0; j < indicesImage.cols; ++j)
         {
             indexFrom = indicesImage.at<cv::Vec2i>(i, j);
-            int r = static_cast<int>(indexFrom[0]);
-            int c = static_cast<int>(indexFrom[1]);
+            int c = static_cast<int>(indexFrom[0]);
+            int r = static_cast<int>(indexFrom[1]);
             if ((r >= fpvImage.rows) || (r < 0) ||
                 (c >= fpvImage.cols) || (c < 0))
             { continue; }
@@ -141,10 +141,24 @@ void BevProjector::fillBevImage(cv::Mat bevImage, cv::Mat fpvImage, cv::Mat indi
 
 cv::Mat BevProjector::initBevPixelLocs(size_t bevNumRows, size_t bevNumCols)
 {
-    cv::Mat x_lin = BevProjector::row_linspace(0, 80, bevNumRows);
-    cv::Mat y_lin = BevProjector::col_linspace(-40, 40, bevNumCols);
+    cv::Mat x_lin = BevProjector::row_linspace(0, 48, bevNumRows);
+    cv::Mat y_lin = BevProjector::col_linspace(-24, 24, bevNumCols);
     cv::Mat bevPixelLocs = BevProjector::meshgrid(x_lin, y_lin); 
     return bevPixelLocs;
+}
+
+void BevProjector::maskOutOfFrustum(cv::Mat bevImage)
+{
+    for (int r = 0; r < bevImage.rows; ++r)
+    {
+        for (int c = 0; c < bevImage.cols; ++c)
+        {
+            if (abs(200 - c) > 400 - r)
+            {
+                bevImage.at<cv::Vec3f>(r, c) = 0;
+            }
+        }
+    }
 }
 
 cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat lidarPoints, cv::Mat PRT)
@@ -163,6 +177,9 @@ cv::Mat BevProjector::getBevImage(cv::Mat fpvPixelVals, cv::Mat lidarPoints, cv:
     flann_index.knnSearch(bevPixelLocs, indicesLidar, dists, knn, cv::flann::SearchParams(32));
     cv::Mat indicesImage = knnIndicesLidarToIndicesImage(indicesLidar, lidarPoints, PRT);
     BevProjector::fillBevImage(bevPixelVals, fpvPixelVals, indicesImage, dists);
-    bevPixelVals = bevPixelVals.reshape(3, bevNumRows);
-    return bevPixelVals;
+    bevPixelVals = bevPixelVals.reshape(3, bevNumRows).t();
+    cv::Mat bevImage;
+    cv::flip(bevPixelVals, bevImage, -1);
+    BevProjector::maskOutOfFrustum(bevImage);
+    return bevImage;
 }
