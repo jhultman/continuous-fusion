@@ -1,8 +1,8 @@
 ## Continuous fusion
 
-C++ implementation of the continuous fusion operation
-from the ECCV 2018 paper
-[Deep Continuous Fusion for Multi-Sensor 3D Object Detection](http://openaccess.thecvf.com/content_ECCV_2018/papers/Ming_Liang_Deep_Continuous_Fusion_ECCV_2018_paper.pdf).
+C++ implementation of continuous fusion from [Deep Continuous Fusion for Multi-Sensor 3D Object Detection](http://openaccess.thecvf.com/content_ECCV_2018/papers/Ming_Liang_Deep_Continuous_Fusion_ECCV_2018_paper.pdf).
+
+A fast, vectorized SciPy version is available if there is any interest.
 
 ![Fusion](/images/demo.gif)
 
@@ -23,6 +23,6 @@ Comments on coordinate systems:
 
     (We use left-multiplying active/alibi coordinate transformations.)
 
-Diagram borrowed from paper (we do not implement MLP):
+Diagram borrowed from paper (we skip MLP):
 
 ![Fusion](/images/fusion.png)
