@@ -1,8 +1,6 @@
 ## Continuous fusion
 
-C++ implementation of continuous fusion from [Deep Continuous Fusion for Multi-Sensor 3D Object Detection](http://openaccess.thecvf.com/content_ECCV_2018/papers/Ming_Liang_Deep_Continuous_Fusion_ECCV_2018_paper.pdf).
-
-A fast, vectorized SciPy version is available if there is any interest.
+C++ implementation of continuous fusion from [Deep Continuous Fusion for Multi-Sensor 3D Object Detection](http://openaccess.thecvf.com/content_ECCV_2018/papers/Ming_Liang_Deep_Continuous_Fusion_ECCV_2018_paper.pdf). I can share a fast, vectorized SciPy version if there is any interest.
 
 ![Fusion](/images/demo.gif)
 
